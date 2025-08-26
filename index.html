@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="author" content="Lefteris Koumis">
+    <title> DEA GIS Library 2.0.4</title>
+    <link rel="shortcut icon" href="./images/caltrans_logo.ico">
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+
+
+    <link disabled id="arcgis-maps-sdk-theme-dark" rel="stylesheet"
+        href="https://js.arcgis.com/4.30/esri/themes/dark/main.css" />
+
+    <link id="arcgis-maps-sdk-theme-light" rel="stylesheet"
+        href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.30/"></script>
+    <link rel="stylesheet" href="./styles.css" />
+
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+    
+    <script src="./calcite.js" type="module"></script>
+  
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" crossorigin="anonymous">
+    <style class="INLINE_PEN_STYLESHEET_ID"></style>
+
+    <link disabled id="arcgis-maps-sdk-theme-dark" rel="stylesheet"
+        href="https://js.arcgis.com/4.30/esri/themes/dark/main.css" />
+</head>
+
+<body>
+    <!-- <div class="notice"> -->
+        <div class="centered">
+        <calcite-notice id='message' icon="exclamation-mark-triangle" closable>
+            <div slot="title">ALERT</div>
+            <!-- <div slot="message">You are allowed max 3 queries</div> -->
+            <div id="Message_html" slot="message"></div>
+        </calcite-notice>
+    </div>
+    <div class="centered">
+        <calcite-notice id='message2' icon="information" closable>
+            <div slot="title">About DEA GIS Library 2.0.4</div>
+            <!-- <div slot="message">You are allowed max 3 queries</div> -->
+            <div id="Message_html2" slot="message"></div>
+
+    </div>
+
+    </calcite-notice>
+    </div>
+
+    <!-- Overlay div for centering the card -->
+    <div class="centered" id="loadingOverlay" style="display: none;">
+        <calcite-card>
+            <h3 slot="heading">Downloading Data</h3>
+            <h2 slot="description" id="completion"></h2>
+            <calcite-loader label="download layer..." inline scale="s" type="indeterminate"></calcite-loader>
+            <div slot="footer-start">
+                <calcite-icon icon="download" text-label="download layer"></calcite-icon>                
+            </div>
+            <div slot="footer-end">
+                <calcite-label>Downloading Layer...
+                </calcite-label>
+            </div>
+        </calcite-card>
+        <!-- Calcite Card with Progress Indicator -->
+
+    </div>
+    <div class="centered" id="loadingOverlay2" style="display: none;">
+        <calcite-card>
+            <h3 slot="heading">Downloading Data</h3>
+            <h2 slot="description" id="completion"></h2>
+            <calcite-loader label="download CSV file..." inline scale="s" type="indeterminate"></calcite-loader>
+            <div slot="footer-start">
+                <calcite-icon icon="download" text-label="download CSV File"></calcite-icon>               
+            </div>
+            <div slot="footer-end">
+                 <calcite-label>Downloading CSV File...
+                </calcite-label>
+            </div>
+        </calcite-card>
+        <!-- Calcite Card with Progress Indicator -->
+
+    </div>
+    <div class="centered" id="loadingOverlay3" style="display: none;">
+        <calcite-card>
+            <h3 slot="heading">Loading Layer</h3>
+            <h2 slot="description" id="completion"></h2>
+            <calcite-loader label="Loading Layer..." inline scale="s" type="indeterminate"></calcite-loader>
+            <div slot="footer-start">
+                <calcite-icon icon="import" text-label="Loading JSON file"></calcite-icon>
+            </div>
+            <div slot="footer-end">
+                <calcite-label>Loading JSON File...
+                </calcite-label>
+            </div>
+        </calcite-card>
+        <!-- Calcite Card with Progress Indicator -->
+
+    </div>
+
+
+    <calcite-shell content-behind>
+        <!--  Header slot  -->
+        <calcite-navigation slot="header">
+            <calcite-navigation-logo slot="logo" heading="Environmental GIS Library 2.0.4"
+                thumbnail=".\images\caltrans logo_sm.png"
+                description="developed by the GNEIS Office of the HQ Division of Environmental Analysis"></calcite-navigation-logo>
+            <!-- <calcite-menu slot="content-start">
+                <img src="./images/holidays_sm.png" alt="Thanksgiving image" style="max-width: 100%; height: auto;">
+            </calcite-menu> -->
+            
+           
+
+            <calcite-menu slot="content-end">
+
+                <calcite-menu-item text-enabled id="about" text="About"></calcite-menu-item>
+
+                <!-- Dark Mode Switch -->
+                <calcite-label layout="inline" class="label-wrapper">
+                    Dark mode: Off
+                    <calcite-switch style="margin-right: 5px;margin-left: 5px;"></calcite-switch>
+                    On
+                </calcite-label>
+
+            </calcite-menu>
+        </calcite-navigation>
+
+        <calcite-shell-panel resizable slot="panel-start" position="start" id="shell-panel-start" display-mode="dock">
+
+            <calcite-action-bar slot="action-bar" expand-disabled id="action-bar-left">
+                <calcite-action-group>
+                    <calcite-action data-action-id="home" id="home" text="Home" icon="home"></calcite-action>
+                    <calcite-action data-action-id="previous" id="previous" text="Previous Extent"
+                        icon="arrow-left"></calcite-action>
+                    <calcite-action data-action-id="next" id="next" text="Next Extent"
+                        icon="arrow-right"></calcite-action>
+                </calcite-action-group>
+                <calcite-action-group>
+                    <calcite-action data-action-id="layers" id="layers" icon="layers"
+                        text="Active Layers"></calcite-action>
+                    <calcite-action data-action-id="legend" id="legend" icon="legend" text="Legend"></calcite-action>
+                    <calcite-action data-action-id="basemaps" id="basemaps" icon="basemap" text="Basemaps"></calcite-action>
+                
+                </calcite-action-group>
+
+            </calcite-action-bar>
+            <calcite-panel heading="Active Layers" class="panel-side" height-scale="l" id="layers_side" closable
+                width-scale="l" data-panel-id="layers" close hidden>
+                <div id="layers-container"></div>
+            </calcite-panel>
+            <calcite-panel heading="Legend" class="panel-side" id="legend_side" closable height-scale="l"
+                width-scale="l" data-panel-id="legend" close hidden>
+                <div id="legend-container"></div>
+            </calcite-panel>
+            <calcite-panel heading="Basemaps" class="panel-side" id="basemaps_side" closable height-scale="l"
+                width-scale="l" data-panel-id="basemaps" close hidden>
+                <div id="basemaps-container"></div>
+            </calcite-panel>
+            
+            <calcite-panel heading="Print" class="panel-side" id="print_side" closable height-scale="l" width-scale="l"
+                data-panel-id="print" close hidden>
+                <div id="print-container"></div>
+            </calcite-panel>
+
+            <div id="features-widget" class="panel-side"></div>
+        </calcite-shell-panel>
+
+
+        <div id="viewDiv"></div>
+
+        <calcite-shell-panel slot="panel-bottom" layout="horizontal" collapsed id="center-row">
+
+            <calcite-shell>
+                <calcite-panel heading="Feature Table of">
+                    <div slot="header-actions-end" style="display: flex; align-items: center; gap: 5px;">
+                        <calcite-label layout="inline">
+                            Filter by map extent
+                            <calcite-checkbox checked scale="s" id="filter_map_extent"></calcite-checkbox>
+                        </calcite-label>
+                        <calcite-action label="export csv" id="exportCSV" title="export csv" icon="file-csv"
+                            text="Export to CSV"></calcite-action>
+                        <calcite-action label="increase table height" icon="chevrons-up" scale="m"
+                            id="increase-table-height" text="Increase table height"
+                            title="increase table height"></calcite-action>
+                        <calcite-action label="decrease table height" slot="header-actions-end"
+                            title="decrease table height" text="Decrease table height" icon="chevrons-down" scale="m"
+                            id="decrease-table-height"></calcite-action>
+                        <calcite-action label="close table" icon="x" scale="m" text="Close table"
+                            id="close_table"></calcite-action>
+                    </div>
+
+                    <div id="tableDiv" class="demo-table"></div>
+
+                    <!-- / ShellCenterRow content -->
+                </calcite-panel>
+
+            </calcite-shell>
+        </calcite-shell-panel>
+
+
+
+        <calcite-shell-panel slot="panel-end" position="end" id="shell-panel-end" display-mode="float" width-scale="l"
+            layout="vertical">
+            <calcite-action-bar slot="action-bar" expand-disabled id="action-bar-right">
+                <calcite-action-group>
+                    <calcite-action data-action-id="add_layers" id="addlayers_widget" text="Add Library Layers"
+                        icon="plus"></calcite-action>                    
+                    <calcite-action data-action-id="add-data" id="add_data_widget" text="Add Data"
+                        icon="add-layer"></calcite-action>
+                    <calcite-action data-action-id="query-attrs" id="query_attrs_widget" icon="edit-attributes"
+                        text="Query Attributes"></calcite-action>
+                    <calcite-action data-action-id="query-geometry" id="query_geom_widget" icon="selection-x"
+                        text="Query Geometry"></calcite-action>
+                    <calcite-action data-action-id="elevation" id="elevation_widget" icon="altitude"
+                        text="Elevation"></calcite-action>
+                    <calcite-action data-action-id="measurement" id="measurement_widget" icon="dimensions"
+                        text="Measurement"></calcite-action>
+                    <calcite-action data-action-id="Sketch" id="Sketch_widget" icon="rectangle-plus"
+                        text="Sketch"></calcite-action>                    
+                     <!-- <calcite-action data-action-id="STEVE" id="STEVELoader_widget" icon="data-magnifying-glass" text="STEVE Data Loader">                            
+                    </calcite-action> -->
+                                       
+                    <calcite-action data-action-id="session" id="session_widget" icon="save"
+                        text="Save Session"></calcite-action>
+                </calcite-action-group>
+                <!-- <calcite-action-group slot="bottom-actions">
+                    <calcite-action text="Tips" icon="question"></calcite-action>
+                    <calcite-action text="Settings" indicator icon="gear"></calcite-action>
+                </calcite-action-group> -->
+            </calcite-action-bar>
+
+            <!-- Add Layers Panel -->
+            <calcite-panel closable id="add_layers_panel">
+                <div slot="header-content" id="custom-heading"></div>
+                <div id="Caltras_district_choice" style="margin-top: 15px; margin-bottom: 15px;">                 
+                  <div style="margin-top: 10px;">
+                    <calcite-label alignment="start" layout="inline" scale="s">
+                      Search for layer:
+                      <calcite-combobox
+                        selection-mode="single"
+                        scale="s"
+                        value="layer_search"
+                        id="layer_search"
+                        max-items="12"
+                        style="width: 305px; color:red;"
+                      ></calcite-combobox>
+                    </calcite-label>
+                  </div>
+                </div>
+                <div class="calcite-tab-content">
+                    <calcite-tabs id="tab-layers">
+                      <calcite-tab-nav slot="title-group">
+                            <calcite-tab-title selected>General</calcite-tab-title>
+                            <calcite-tab-title>Biology</calcite-tab-title>
+                            <calcite-tab-title>Climate</calcite-tab-title>
+                            <calcite-tab-title>Cultural</calcite-tab-title>
+                            <calcite-tab-title>HazWaste</calcite-tab-title>
+                            <calcite-tab-title>Air</calcite-tab-title>
+                            <calcite-tab-title>Water</calcite-tab-title>
+                            <calcite-tab-title>Agencies</calcite-tab-title>
+                            <calcite-tab-title>CT</calcite-tab-title>
+                        </calcite-tab-nav>
+
+                        <!-- General Tab -->
+                        <calcite-tab active>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Environmental</calcite-tab-title>
+                                    <calcite-tab-title>Coastal</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="General"></calcite-tab>
+                                <calcite-tab id="Coastal"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- Biology Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Wildlife</calcite-tab-title>
+                                    <calcite-tab-title>Fish</calcite-tab-title>
+                                    <calcite-tab-title>Vegetation</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Wildlife"></calcite-tab>
+                                <calcite-tab id="Fish"></calcite-tab>
+                                <calcite-tab id="Vegetation"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- Climate Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Calfire</calcite-tab-title>
+                                    <calcite-tab-title>NOAA SLR</calcite-tab-title>
+                                    <calcite-tab-title>USGS CoSMoS SLR</calcite-tab-title>
+                                    <calcite-tab-title>Groundwater SLR</calcite-tab-title>
+                                    <calcite-tab-title>CT VA</calcite-tab-title>
+                                    <calcite-tab-title>CT APR</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Fire"></calcite-tab>
+                                <calcite-tab id="NOAASLR"></calcite-tab>
+                                <calcite-tab id="USGSSLR"></calcite-tab>
+                                <calcite-tab id="Ground"></calcite-tab>
+                                <calcite-tab id="VA"></calcite-tab>
+                                <calcite-tab id="APR"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- Cultural Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Ethno</calcite-tab-title>
+                                    <calcite-tab-title>Cultural Place</calcite-tab-title>
+                                    <calcite-tab-title>Communities</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Ethno"></calcite-tab>
+                                <calcite-tab id="Sites"></calcite-tab>
+                                <calcite-tab id="Cultcomm"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- HazWaste Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Mineral Hazards</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Minerals"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- Air/Noise Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Air Quality</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Air"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- Water Tab -->
+                        <calcite-tab id="Water">
+                            Content D
+                        </calcite-tab>
+
+                        <!-- Agencies Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title selected>Federal</calcite-tab-title>
+                                    <calcite-tab-title>State</calcite-tab-title>
+                                    <calcite-tab-title>Local</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Federal"></calcite-tab>
+                                <calcite-tab id="State"></calcite-tab>
+                                <calcite-tab id="Local"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+
+                        <!-- CT Tab -->
+                        <calcite-tab>
+                            <calcite-tabs>
+                                <calcite-tab-nav slot="title-group">
+                                    <calcite-tab-title>Transportation</calcite-tab-title>
+                                    <calcite-tab-title>Broadband</calcite-tab-title>
+                                    <calcite-tab-title>Others</calcite-tab-title>
+                                </calcite-tab-nav>
+                                <calcite-tab id="Transportation"></calcite-tab>
+                                <calcite-tab id="Broadband"></calcite-tab>
+                                <calcite-tab id="Others"></calcite-tab>
+                            </calcite-tabs>
+                        </calcite-tab>
+    
+    
+                        </calcite-tabs>
+                </div>
+            </calcite-panel>
+
+
+
+
+            <!--Add Data Panel-->
+            <calcite-panel closable id="add_data_panel" heading="Add Data" style="display: none;" with-Scale="s">
+                <calcite-tabs>
+                    <calcite-tab-nav slot="title-group" id="theAddDatatabs">
+                        <calcite-tab-title id="add_url" tab="Add URL">Add URL
+                        </calcite-tab-title>
+                        <calcite-tab-title id="add_file" tab="Add Local File">Add Local File
+                        </calcite-tab-title>
+                    </calcite-tab-nav>
+                    <calcite-radio-button-group scale="s" name="add_data" id="add_data_option"
+                        style="padding-left:10px">
+                        <calcite-tab tab="Add URL">
+                            <h3>Select type of data</h3>
+                            <calcite-label layout="inline">
+                                <calcite-radio-button value="FL" id="add_FL"></calcite-radio-button>ArcGIS REST Service
+                            </calcite-label>
+                            <calcite-label layout="inline">
+                                <calcite-radio-button value="CSV_URL" id="add_CSV_URL"></calcite-radio-button>Comma
+                                Separated Values (CSV)
+                            </calcite-label>
+                            <calcite-label layout="inline">
+                                <calcite-radio-button value="KML_URL" id="add_KML_URL"></calcite-radio-button> Keyhole
+                                Markup Language (KML)
+                            </calcite-label>
+                            <calcite-label layout="inline">
+                                <calcite-radio-button value="WebMap" id="add_WebLayers"></calcite-radio-button>Add
+                                Layers
+                                from Webmap
+                            </calcite-label>
+                    </calcite-radio-button-group>
+                    </calcite-tab>
+                    <calcite-tab tab="Add Local File">
+                        <h3>Add any of the following file types</h3>
+                        <ul>
+                            <li>Shapefile (SHP) in a zipped file</li>
+                            <!-- <li>ESRI Formatted JSON</li> -->
+                            <li>Keyhole Markup Language (KML)</li>
+                            <li>Comma Separated Values (CSV)</li>
+                        </ul>
+
+
+                    </calcite-tab>
+                </calcite-tabs>
+
+                <div id="get_file" style="display: none; font-size: small; margin: 10px;">
+                    <form enctype="multipart/form-data" method="post" id="uploadForm">
+                        <div class="field">
+                            <label class="file-upload">
+                                <span><strong>Add SHP, KML, CSV</strong></span>
+                                <input type="file" name="file" id="fileInput" />
+                                <p id="status"></p>
+                            </label>
+                        </div>
+                    </form>
+
+                </div>
+
+                <div id="get_FL_URL" style="display: none; font-size: small;">
+                    <calcite-label scale="s" layout="inline">Enter ArcGIS REST Service URL: <calcite-input id="FL_URL"
+                            style="width:400px; padding:10px">
+                        </calcite-input>
+                    </calcite-label>
+                    <div class="combos">
+                        <div id="line-controls" style="display: none; margin: 10px;">
+                            <label for="colorPicker">Color:</label>
+                            <input type="color" id="colorPicker">
+                            <label for="lineWidth">Line Width:</label>
+                            <input type="number" id="lineWidth" min="1" max="10" step="1">
+                            <button id="applyChanges">Apply Changes</button>
+                        </div>
+                        <calcite-button scale="s" style="margin: 10px;" id="plot_FLlayer">Plot ArcGIS REST Layer
+                        </calcite-button>
+                    </div>
+
+                </div>
+                <div id="get_KML_URL" style="display: none; font-size: small;">
+                    <calcite-label scale="s" layout="inline">Enter KML URL: <calcite-input id="KML_URL"
+                            style="width:400px; padding:10px">
+                        </calcite-input>
+                    </calcite-label>
+                    <div class="combos">
+                        <calcite-button scale="s" style="margin: 10px;" id="plot_KMLlayer">Plot KML Layer
+                        </calcite-button>
+                    </div>
+                </div>
+                <div id="get_CSV_URL" style="display: none; font-size: small;">
+                    <calcite-label scale="s" layout="inline">Enter CSV URL: <calcite-input id="CSV_URL"
+                            style="width:400px; padding:10px">
+                        </calcite-input>
+                    </calcite-label>
+                    <div class="combos">
+                        <calcite-button scale="s" style="margin: 10px;" id="plot_CSVlayer">Plot CSV Layer
+                        </calcite-button>
+                    </div>
+
+                </div>
+                <div id="get_WebMap_Layers" style="display: none; font-size: small;">
+                    <div style="padding: 10px;">
+                        <p>Example:
+                            "https://www.arcgis.com/home/webmap/viewer.html?webmap=8737700c3e664ebfba0484deec3c9940"
+                        </p>
+                        <p>The substring "https://www.arcgis.com/" <span style="color: blue;">is the portal
+                                URL</span>
+                        </p>
+                        <p>and substring "8737700c3e664ebfba0484deec3c9940" <span style="color: blue;"> is the
+                                portal
+                                id</span>.</p>
+                        <p style="color:red">Note: All the layers displayed in the webmap and the webmap itself need to
+                            be set to be shared by "Everyone".</p>
+                    </div>
+                    <calcite-label scale="s" layout="inline">Enter portal URL: <calcite-input id="portal_URL"
+                            style="width:400px; padding:10px">
+                        </calcite-input>
+                    </calcite-label>
+                    <calcite-label scale="s" layout="inline">Enter portal id: <calcite-input id="portal_id"
+                            style="width:400px; padding:10px">
+                        </calcite-input>
+                    </calcite-label>
+                    <div class="combos">
+                        <calcite-button scale="s" style="margin: 10px;" id="plot_WebMap_layers">Add WebMap
+                            Layers
+                        </calcite-button>
+                    </div>
+
+                </div>
+
+            </calcite-panel>
+
+            <!-- Query Attributes-->
+            <calcite-panel closable id="query_attrs_panel" heading="Query by Attributes"
+                style="height:auto; display:none;">
+                <p style="color:red; margin-left:10px">At this time 'Query by Attributes Widget' is available only for
+                    feature
+                    layers</p>
+                <div style="margin: 10px;">
+                    <calcite-combobox scale="s" id="LayerQuery" label="Layer" placeholder="Layer?" max-items="8"
+                        selection-mode="single" style="width: 380px;">
+                    </calcite-combobox>
+                </div>
+
+                <div id="QueryListing"></div>
+
+                <div style="margin-bottom: 40px; margin-top: 30px;margin-left: 10px;">
+
+                    <div class="combos">
+                        <calcite-button id="query_attrs" slot="footer-actions">
+                            Query
+                        </calcite-button>
+                    </div>
+                    <div class="combos">
+                        <calcite-button id="clear_query_entries" slot="footer-actions">
+                            Reset Entries
+                        </calcite-button>
+                    </div>
+                    <div class="combos">
+                        <calcite-button id="clear_query_graphics" slot="footer-actions" appearance="outline">
+                            Clear Graphics
+                        </calcite-button>
+                    </div>
+                </div>
+            </calcite-panel>
+
+            <!-- Save Session-->
+            <calcite-panel closable id="session_panel" heading="Save/Restore Session"
+                style="display:none;padding:10px; height:auto" with-Scale="s">
+                <calcite-block open heading="Save current session" icon-start="save-as">
+                    <calcite-input scale="s" label="Session Name:" placeholder="Enter session name" id="user-input"
+                        clearable style="width: 200px; margin-bottom: 20px;">
+                    </calcite-input>
+                    <calcite-button id="save_session_btn">Click to save</calcite-button>
+                </calcite-block>
+                <calcite-block open heading="Restore session">
+                    <div slot="icon">
+                        <img src="./images/restore.png" alt="Restore iconn" style="width: 20px; height: 10px;">
+                    </div>
+                    <input type="file" id="restore_session" accept=".json" />
+                </calcite-block>
+            </calcite-panel>
+
+            <!-- Query Geometry-->
+            <calcite-panel closable id="query_geom_panel" heading="Query by Geometry"
+                style="display:none;padding:10px; height:auto" with-Scale="s">
+                <calcite-block open heading="Layer selection" style="height: 400px;">
+                    <calcite-combobox scale="s" id="LayerQuery_geom" label="Layer to Query"
+                        placeholder="Layer to Query?" max-items="6" selection-mode="single"
+                        style="width: 380px;overflow:visible !important;">
+                    </calcite-combobox>
+
+                    <div id="sketch_info" style="margin: 10px; display: none; height:auto">
+                        <div>
+                            <b>Filter by geometry</b><br />
+                            <div class="combos">
+                                <calcite-button scale="s" style="margin-top: 10px;" id="point-geometry-button">Filter by
+                                    point</calcite-button>
+                            </div>
+                            <div class="combos">
+                                <calcite-button scale="s" style="margin-top: 10px;" id="line-geometry-button">Filter
+                                    by
+                                    line</calcite-button>
+                            </div>
+                            <div class="combos">
+                                <calcite-button scale="s" style="margin-top: 10px;" id="polygon-geometry-button">Filter
+                                    by polygon</calcite-button>
+                            </div>
+                        </div>
+
+                        <br /><br />
+                        <div style="clear: both; margin-top: 20px; ">
+                            <calcite-label layout="inline">
+                                Spatial relationship:
+                                <calcite-combobox scale="s" value="relationship-select" label="relationship select"
+                                    placeholder="" id="relationship-select" max-items="3" style=" width: 120px;"
+                                    selection-mode="single">
+                                    <calcite-combobox-item value="intersects"
+                                        text-label="intersects"></calcite-combobox-item>
+                                    <calcite-combobox-item value="contains"
+                                        text-label="contains"></calcite-combobox-item>
+                                    <calcite-combobox-item value="disjoint" text-label="disjoint"
+                                        selected></calcite-combobox-item>
+                                </calcite-combobox>
+                            </calcite-label>
+
+                            <calcite-label layout="inline">
+                                Set a geometry buffer size (miles):
+                                <calcite-slider id="bufferNum" style="width: 100%;" snap="true" value="0" label-handles
+                                    label-ticks max-label="2" min-label="0" step="0.25" ticks="0.25"
+                                    max="2"></calcite-slider>
+                            </calcite-label>
+                            <br /><br />
+                            <calcite-button id="clearFilter" slot="footer-actions" appearance="outline">
+                                Clear filter
+                            </calcite-button>
+                        </div>
+
+                    </div>
+                </calcite-block>
+            </calcite-panel>
+
+
+
+            <!-- Layer List -->
+            <calcite-panel closable id="layerlist_panel" heading="Layer List"
+                style="padding:10px; height:auto; display:none;" with-Scale="s">
+                <div id="layerlist-node" class="esri-widget"></div>
+            </calcite-panel>
+
+            <!-- Elevation-->
+            <calcite-panel closable id="elevation_panel" heading="Elevation Profile"
+                style="padding:10px; height:auto; display:none;" with-Scale="s">
+                <div id="elevation-node" class="esri-widget"></div>
+            </calcite-panel>
+
+            <!-- Measurement-->
+            <calcite-panel closable id="measurement_panel" heading="Measurement"
+                style="padding:10px; height:auto; display:none;" with-Scale="s">
+                <div id="toolbarDiv" class="esri-component esri-widget">
+                    <div class="combos">
+                        <calcite-button id="distance" icon-start="measure"
+                            label="Distance Measurement Tool">Length</calcite-button>
+                    </div>
+                    <div class="combos">
+                        <calcite-button id="area" icon-start="measure-area" label="Area Measurement Tool">Area
+                        </calcite-button>
+                    </div>
+                    <div class="combos">
+                        <calcite-button id="clear" icon-start="trash" label="Clear Measurements">Clear
+                        </calcite-button>
+                    </div>
+                </div>
+            </calcite-panel>
+
+            <!-- Sketch-->
+            <calcite-panel closable id="sketch_panel" heading="Sketch" style="padding:10px; height:auto; display:none;"
+                with-Scale="s">
+                <div id="sketch-node" class="esri-widget"></div>
+            </calcite-panel>
+
+            
+        </calcite-shell-panel>
+
+
+        <!-- <div id="print_box" style="display: none;"></div> -->
+    </calcite-shell>
+
+
+</body>
+
+</html>
